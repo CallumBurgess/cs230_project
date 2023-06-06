@@ -10,10 +10,10 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import RFE
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import cross_val_score, KFold
-from tensorflow.keras.preprocessing.image import image_dataset_from_directory
+from tensorflow import keras 
 
 import tensorflow as tf
-
+from tf import keras
 
 from glob import glob 
 import wave
@@ -95,8 +95,7 @@ model.compile(
 earlyStopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, verbose=0, mode='min')
 mcp_save =tf.keras.callbacks.ModelCheckpoint('.mdl_wts.hdf5', save_best_only=True, monitor='val_loss', mode='min')
 reduce_lr_loss = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=7, verbose=1, epsilon=1e-4, mode='min')
-print("here3")
-history = model.fit(train_ds, batch_size = 2, steps_per_epoch=len(train_ds)//16, epochs=50, validation_data=val_ds,callbacks=[earlyStopping, mcp_save, reduce_lr_loss],)
+history = model.fit(train_ds, epochs=50, validation_data=val_ds,callbacks=[earlyStopping, mcp_save, reduce_lr_loss],)
 model.save('./classification_model')
 
 history_dict = history.history
@@ -109,7 +108,7 @@ plt.plot(epochs, val_loss, label='Validation loss')
 plt.xlabel('Epochs')
 plt.ylabel('Accuracy')
 plt.legend()
-plt.show()
+plt.show(block=True)
 
 final_loss, final_acc = model.evaluate(test_ds, verbose=0)
 print("Final test loss: {0:.6f}, final test accuracy: {1:.6f}".format(final_loss, final_acc))
