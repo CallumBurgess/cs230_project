@@ -13,7 +13,7 @@ from sklearn.model_selection import cross_val_score, KFold
 from tensorflow import keras 
 
 import tensorflow as tf
-from tf import keras
+from tensorflow import keras
 
 from glob import glob 
 import wave
