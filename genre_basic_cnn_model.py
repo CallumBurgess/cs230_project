@@ -13,6 +13,8 @@ from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import RFE
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import cross_val_score, KFold
+from tensorflow.keras.preprocessing.image import image_dataset_from_directory
+
 print("1")
 print("1")
 import tensorflow as tf
@@ -38,7 +40,7 @@ directory = './spectrograms'
 
 print("here")
 # split data into train, valid, test
-train_ds = tf.keras.utils.image_dataset_from_directory(
+train_ds = mage_dataset_from_directory(
 directory = directory,
 image_size = (IMG_HEIGHT, IMG_WIDTH),
 validation_split = validation_split,
@@ -47,7 +49,7 @@ seed = seed_train_validation,
 color_mode = 'grayscale',
 shuffle = shuffle_value)
 
-val_ds = tf.keras.utils.image_dataset_from_directory(
+val_ds = image_dataset_from_directory(
 directory = directory,
 image_size = (IMG_HEIGHT, IMG_WIDTH),
 validation_split = validation_split,
