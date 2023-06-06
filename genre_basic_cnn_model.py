@@ -4,21 +4,15 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import os
 
-import librosa
-from librosa.feature import mfcc
 from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score, roc_curve
 from sklearn import preprocessing
-print("1")
 from sklearn.model_selection import train_test_split
 from sklearn.feature_selection import RFE
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import cross_val_score, KFold
 from tensorflow.keras.preprocessing.image import image_dataset_from_directory
 
-print("1")
-print("1")
 import tensorflow as tf
-print("1")
 
 
 from glob import glob 
@@ -38,9 +32,8 @@ shuffle_value = True
 validation_split = 0.2
 directory = './spectrograms'
 
-print("here")
 # split data into train, valid, test
-train_ds = mage_dataset_from_directory(
+train_ds = tf.keras.preprocessing.image_dataset_from_directory(
 directory = directory,
 image_size = (IMG_HEIGHT, IMG_WIDTH),
 validation_split = validation_split,
@@ -49,7 +42,7 @@ seed = seed_train_validation,
 color_mode = 'grayscale',
 shuffle = shuffle_value)
 
-val_ds = image_dataset_from_directory(
+val_ds = tf.keras.preprocessing.image_dataset_from_directory(
 directory = directory,
 image_size = (IMG_HEIGHT, IMG_WIDTH),
 validation_split = validation_split,
@@ -98,13 +91,12 @@ model.compile(
     optimizer=tf.keras.optimizers.RMSprop(),
     metrics=['accuracy'],
 )
-print("here2")
 
 earlyStopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, verbose=0, mode='min')
 mcp_save =tf.keras.callbacks.ModelCheckpoint('.mdl_wts.hdf5', save_best_only=True, monitor='val_loss', mode='min')
 reduce_lr_loss = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=7, verbose=1, epsilon=1e-4, mode='min')
 print("here3")
-history = model.fit(train_ds, batch_size = 2, steps_per_epoch=300, epochs=6, validation_data=val_ds,callbacks=[earlyStopping, mcp_save, reduce_lr_loss],)
+history = model.fit(train_ds, batch_size = 2, steps_per_epoch=len(train_ds)//16, epochs=50, validation_data=val_ds,callbacks=[earlyStopping, mcp_save, reduce_lr_loss],)
 model.save('./classification_model')
 
 history_dict = history.history
