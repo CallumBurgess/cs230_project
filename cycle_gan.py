@@ -1,6 +1,7 @@
 import tensorflow as tf
 from tensorflow_examples.models.pix2pix import pix2pix
 from sklearn.model_selection import train_test_split
+import os 
 
 BATCH_SIZE = 8
 N_CHANNELS = 1
@@ -18,7 +19,6 @@ genre2_paths = [os.path.join(directory2, filename) for filename in os.listdir(di
 
 dataset1 = tf.data.Dataset.from_tensor_slices(genre1_paths)
 dataset2 = tf.data.Dataset.from_tensor_slices(genre2_paths)
-print(len(dataset1),len(dataset2))
 
 
 def normalize(image_path):
@@ -28,12 +28,12 @@ def normalize(image_path):
   image = (image / 127.5) - 1
   return tf.image.grayscale_to_rgb(image)
 
-dataset1 = dataset1.map(normalize, num_parallel_calls=tf.data.AUTOTUNE).cache().shuffle(
+dataset1 = dataset1.map(normalize).cache().shuffle(
     1000).batch(BATCH_SIZE)
 split = 4*len(genre1_paths)//5
 train1, test1 = dataset1.take(split),dataset1.skip(split)
 
-dataset2 = dataset2.map(normalize, num_parallel_calls=tf.data.AUTOTUNE).cache().shuffle(
+dataset2 = dataset2.map(normalize).cache().shuffle(
     1000).batch(BATCH_SIZE)
 split = 4*len(genre2_paths)//5
 train2, test2 = dataset2.take(split),dataset2.skip(split)
@@ -154,17 +154,21 @@ def train_step(real_x, real_y):
                                                 discriminator_y.trainable_variables))
   return total_gen_g_loss, total_gen_f_loss
 
-for epoch in range(EPOCHS):
-  n = 0
-  for image_x, image_y in tf.data.Dataset.zip((train1, train2)):
-    g_loss, f_loss = train_step(image_x, image_y)
-    if n % 10 == 0:
-      print (str(n) + "%")
-    n += 1
+@tf.function
+def train():
+	for epoch in range(EPOCHS):
+	  n = 0
+	  for image_x, image_y in tf.data.Dataset.zip((train1, train2)):
+	    g_loss, f_loss = train_step(image_x, image_y)
+	    if n % 10 == 0:
+	      print (str(n) + "%")
+	    n += 1
 
-  print(g_loss, f_loss)
-  clear_output(wait=True)
-  generate_images(generator_g, sample_1)
+	  print(g_loss, f_loss)
+	  clear_output(wait=True)
+	  generate_images(generator_g, sample_1)
+
+train()
 
 
 
