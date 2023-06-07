@@ -4,7 +4,11 @@ import os
 import random
 import sys
 from IPython.display import Audio
+import numpy as np
 
+IMG_HEIGHT = IMG_WIDTH = 256
+BATCH_SIZE = 8
+N_CHANNELS = 1
 
 def calc_loss(img, genre, content, model):
   # convert image into same form as training
@@ -47,7 +51,7 @@ class DeepDreamAudio(tf.Module):
       return loss, img
 
 
-deepdreamaudio = DeepDreamAudio(spec_model)
+
 
 # set up training of image 
 def run_deep_dream_simple(img, genre, content, steps=100, step_size=0.005):
@@ -81,12 +85,14 @@ genre_layer = layer_names[-2]
 layers = [model.get_layer(content_layer).output, model.get_layer(genre_layer).output]
 spec_model = tf.keras.Model(inputs=model.input, outputs=layers)
 
-source_image_path, genre = sys.argv[0], sys.argv[1]
-folder_path = "/spectrograms/" + str(genre)
-genre_image_path = random.choice(os.listdir(folder_path))
+deepdreamaudio = DeepDreamAudio(spec_model)
+
+source_image_path, genre = sys.argv[1], sys.argv[2]
+folder_path = "./spectrograms/" + str(genre)
+genre_image_path = foler_path + "/" + random.choice(os.listdir(folder_path))
 
 image_s = Image.open(source_image_path)
-image = np.array(image_s)  
+image_s = np.array(image_s)  
 content = spec_model(tf.expand_dims(image_s, axis=0))[0]
 content = tf.convert_to_tensor(content, dtype=tf.float32)
 
@@ -95,9 +101,9 @@ before_image = Image.fromarray(image_s, mode="L")
 before_image.show()
 
 image_g = Image.open(genre_image_path)
-image = np.array(image_g)  
-content = spec_model(tf.expand_dims(image_g, axis=0))[1]
-content = tf.convert_to_tensor(content, dtype=tf.float32)
+image_g = np.array(image_g)  
+genre = spec_model(tf.expand_dims(image_g, axis=0))[1]
+genre = tf.convert_to_tensor(content, dtype=tf.float32)
 
 print("before content image_g: ")
 before_image = Image.fromarray(image_g, mode="L")
@@ -111,6 +117,7 @@ rand_image.show()
 
 print("image after: ")
 converted = run_deep_dream_simple(rand_init, genre, content,steps=3000)
+
 converted = ((converted.numpy() + 1)*128).astype('int')
 converted = np.asarray(converted,dtype=np.uint8)
 converted_image = Image.fromarray(converted, mode="L")
