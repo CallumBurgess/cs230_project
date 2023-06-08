@@ -1,3 +1,5 @@
+# This file calls Audio Diffusion's spectrogram - to - audio function in order 
+# to convert our generated spectrograms into music
 from IPython.display import Audio
 from pydub import AudioSegment
 import pylab
@@ -5,8 +7,6 @@ import sys
 import torch
 sys.path.append('./audio-diffusion')
 from audiodiffusion import AudioDiffusion
-
-
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 generator = torch.Generator(device=device)

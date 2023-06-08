@@ -1,3 +1,6 @@
+# Implements and trains a CNN on inputted spectrograms in order to clasify genre
+# Used the following tutorial to help understand the libraries neededL https://www.kaggle.com/code/christianlillelund/classify-mnist-audio-using-spectrograms-keras-cnn)  
+
 import numpy as np 
 from scipy.io import wavfile
 import pandas as pd
@@ -18,8 +21,6 @@ from tensorflow import keras
 from glob import glob 
 import wave
 import random
-
-
 
 
 # settings for images and training
@@ -92,6 +93,7 @@ model.compile(
     metrics=['accuracy'],
 )
 
+# Train model with early stopping to prevent overtraining
 earlyStopping = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, verbose=0, mode='min')
 mcp_save =tf.keras.callbacks.ModelCheckpoint('.mdl_wts.hdf5', save_best_only=True, monitor='val_loss', mode='min')
 reduce_lr_loss = tf.keras.callbacks.ReduceLROnPlateau(monitor='val_loss', factor=0.1, patience=7, verbose=1, epsilon=1e-4, mode='min')
@@ -103,6 +105,7 @@ val_acc_values = history_dict['val_accuracy']
 val_loss = history_dict['val_loss']
 epochs = range(1, len(val_acc_values)+1)
 
+# plot training data
 plt.plot(epochs, val_acc_values, label='Validation accuracy')
 plt.plot(epochs, val_loss, label='Validation loss')
 plt.xlabel('Epochs')

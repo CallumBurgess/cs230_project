@@ -1,3 +1,6 @@
+# This file implements and trains a cycle GAN model for converting from one genre to another 
+# genre1, genre2 can be specified here
+# The main structure and library knowledge for this code comes from the following colab tutorial: https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/tutorials/generative/cyclegan.ipynb
 import tensorflow as tf
 from tensorflow_examples.models.pix2pix import pix2pix
 from sklearn.model_selection import train_test_split
@@ -7,6 +10,7 @@ import numpy as np
 from PIL import Image
 tf.enable_eager_execution()
 
+# image attributes
 IMG_HEIGHT = 256
 IMG_WIDTH = 256
 BATCH_SIZE = 2
@@ -23,12 +27,10 @@ directory2 = "./spectrograms/" + genre2
 
 genre1_paths = [os.path.join(directory1, filename) for filename in os.listdir(directory1)]
 genre2_paths = [os.path.join(directory2, filename) for filename in os.listdir(directory2)]
-
-
 dataset1 = tf.data.Dataset.from_tensor_slices(genre1_paths)
 dataset2 = tf.data.Dataset.from_tensor_slices(genre2_paths)
 
-
+# how to process the data so that we get the images, convert them to tensors, and standardize them
 def normalize(image_path):
   image = tf.io.read_file(image_path)
   image = tf.image.decode_image(image, channels=1)
@@ -36,6 +38,7 @@ def normalize(image_path):
   image = (image / 127.5) - 1
   return tf.reshape(tf.image.grayscale_to_rgb(image), (IMG_HEIGHT, IMG_WIDTH, 3))
 
+# divide into train and test
 dataset1 = dataset1.cache().map(normalize).cache().shuffle(
     100).batch(2)
 split = 4*len(genre1_paths)//5
@@ -46,11 +49,9 @@ dataset2 = dataset2.cache().map(normalize).cache().shuffle(
 split = 4*len(genre2_paths)//5
 train2, test2 = dataset2.take(split),dataset2.skip(split)
 
-### Most of this code structure and logic is based on the cyclegan tf tutorial located at the following colab:  https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/tutorials/generative/cyclegan.ipynb#scrollTo=2M7LmLtGEMQJ
-
-
 OUTPUT_CHANNELS = 3
 
+# define the generators and discriminators
 generator_g = pix2pix.unet_generator(OUTPUT_CHANNELS, norm_type='instancenorm')
 generator_f = pix2pix.unet_generator(OUTPUT_CHANNELS, norm_type='instancenorm')
 
@@ -58,28 +59,27 @@ discriminator_x = pix2pix.discriminator(norm_type='instancenorm', target=False)
 discriminator_y = pix2pix.discriminator(norm_type='instancenorm', target=False)
 
 
-
-loss_obj = tf.keras.losses.BinaryCrossentropy(from_logits=True)
+# loss objective used for gen and discr
+binary_crossentropy= tf.keras.losses.BinaryCrossentropy(from_logits=True)
 
 def discriminator_loss(real, generated):
-  real_loss = loss_obj(tf.ones_like(real), real)
-  generated_loss = loss_obj(tf.zeros_like(generated), generated)
-  total_disc_loss = real_loss + generated_loss
-  return total_disc_loss * 0.5
+  r_loss = binary_crossentropy(tf.ones_like(real), real)
+  g_loss = binary_crossentropy(tf.zeros_like(generated), generated)
+  return r_loss + g_loss
 
 def generator_loss(generated):
-  return loss_obj(tf.ones_like(generated), generated)
+  return binary_crossentropy(tf.ones_like(generated), generated)
 
 def calc_cycle_loss(real_image, cycled_image):
   loss = tf.reduce_mean(tf.abs(real_image - cycled_image))
   return 8 * loss
 
-generator_g_optimizer = tf.keras.optimizers.Adam(1e-5, beta_1=0.5)
-generator_f_optimizer = tf.keras.optimizers.Adam(1e-5, beta_1=0.5)
-discriminator_x_optimizer = tf.keras.optimizers.Adam(1e-5, beta_1=0.5)
-discriminator_y_optimizer = tf.keras.optimizers.Adam(1e-5, beta_1=0.5)
+generator_g_optimizer = tf.keras.optimizers.Adam(5e-5, beta_1=0.5)
+generator_f_optimizer = tf.keras.optimizers.Adam(5e-5, beta_1=0.5)
+discriminator_x_optimizer = tf.keras.optimizers.Adam(5e-5, beta_1=0.5)
+discriminator_y_optimizer = tf.keras.optimizers.Adam(5e-5, beta_1=0.5)
 
-
+#taken for colab tutorial above 
 def train_step(real_x, real_y):
   with tf.GradientTape(persistent=True) as tape:
   	#generators 
@@ -92,7 +92,7 @@ def train_step(real_x, real_y):
     disc_real_y = discriminator_y(real_y, training=True)
     disc_fake_x = discriminator_x(fake_x, training=True)
     disc_fake_y = discriminator_y(fake_y, training=True)
-    #calciulate losses
+    #calculate losses
     gen_g_loss = generator_loss(disc_fake_y)
     gen_f_loss = generator_loss(disc_fake_x)
     total_cycle_loss = calc_cycle_loss(real_x, cycled_x) + calc_cycle_loss(real_y, cycled_y)
@@ -130,8 +130,11 @@ def train_step(real_x, real_y):
 
 EPOCHS = 200
 
+# take non train image 
 test_image = genre1_paths[-3]
 print(test_image)
+
+# used to generate the same image at different stages of GAN training
 def gen_image(epoch):
   input_image = normalize(test_image)
   test_input = input_image
@@ -147,7 +150,6 @@ def train():
 	  n = 0
 	  total_gen_g_loss, total_gen_f_loss, total_cycle_loss, disc_x_loss, disc_y_loss= 0.0,0.0,0.0,0.0,0.0
 	  for image_x, image_y in tf.data.Dataset.zip((train1, train2)):
-
 	    total_gen_g_loss, total_gen_f_loss, total_cycle_loss, disc_x_loss, disc_y_loss = train_step(image_x, image_y)
 	    if n % 10 == 0:
 	    	print(n)
@@ -155,13 +157,13 @@ def train():
 
 	  print("Losses:", total_gen_g_loss, total_gen_f_loss, total_cycle_loss, disc_x_loss, disc_y_loss)
 	  gen_image(epoch)
-	  generator_g.save_weights("./gan_model/" + genre2 + "generator")
+	# save weights for later 
+	generator_g.save_weights("./gan_model/" + genre2 + "generator")
 	generator_f.save_weights("./gan_model/" + genre1 + "generator")
 	discriminator_x.save_weights("./gan_model/" + genre1 + "discriminator")
 	discriminator_y.save_weights("./gan_model/" + genre2 + "discriminator")
 
 train()
-
 print("done")
 
 

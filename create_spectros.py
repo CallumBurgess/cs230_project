@@ -1,3 +1,5 @@
+# Creates spectrograms given inputted audios by splitting them up, converting them into audio, then saving them
+
 import numpy as np 
 import os
 from IPython.display import Audio
@@ -9,6 +11,7 @@ import sys
 sys.path.append('./audio-diffusion')
 from audiodiffusion import AudioDiffusion
 
+# file paths 
 genre_path = './Dataset/Data/genres_original'
 data_path = './Dataset/Data'
 file_path = [os.path.join(genre_path,x) for x in os.listdir(genre_path)]
@@ -21,7 +24,7 @@ audio_diffusion = AudioDiffusion(model_id=model_id)
 # mel is used for conversion 
 mel = audio_diffusion.pipe.mel
 
-
+# variables for spectrograms
 sample_rate = 22050
 audio_files = glob(genre_path + "/*/*.wav")
 spec_to_label = dict()

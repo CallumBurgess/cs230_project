@@ -1,3 +1,7 @@
+# Uses the CNN model to transform genre of a music based on 
+# the activations of the relevant style and content layers
+# Used the following Tutorial for DeepDream: https://colab.research.google.com/github/tensorflow/docs/blob/master/site/en/tutorials/generative/deepdream.ipynb
+
 import tensorflow as tf
 from PIL import Image
 import os 
@@ -50,9 +54,6 @@ class DeepDreamAudio(tf.Module):
 
       return loss, img
 
-
-
-
 # set up training of image 
 def run_deep_dream_simple(img, genre, content, steps=100, step_size=0.005):
   img = tf.keras.applications.inception_v3.preprocess_input(img)
@@ -73,24 +74,26 @@ def run_deep_dream_simple(img, genre, content, steps=100, step_size=0.005):
   return img
 
 
-
+# load CNN model
 model = tf.keras.models.load_model('./classification_model')
 layer_names = []
 for l in model.layers:
   layer_names.append(l.name)
 print(layer_names)
 
-content_layer = layer_names[2]
-genre_layer = layer_names[-2]
+
+# pick layers to use for content and style embeddings
+content_layer = layer_names[3]
+genre_layer = layer_names[-3]
 layers = [model.get_layer(content_layer).output, model.get_layer(genre_layer).output]
 spec_model = tf.keras.Model(inputs=model.input, outputs=layers)
 
 deepdreamaudio = DeepDreamAudio(spec_model)
-
 source_image_path, genre = sys.argv[1], sys.argv[2]
 folder_path = "./spectrograms/" + str(genre)
 genre_image_path = foler_path + "/" + random.choice(os.listdir(folder_path))
 
+# get relevant embeddings
 image_s = Image.open(source_image_path)
 image_s = np.array(image_s)  
 content = spec_model(tf.expand_dims(image_s, axis=0))[0]
@@ -124,6 +127,7 @@ converted_image = Image.fromarray(converted, mode="L")
 converted_image.save("generated_spectro.jpg")
 converted_image.show()
 
+# also print out the average difference in pixel values 
 difference = np.mean(converted - image_s)
 print("difference: ", difference)
 
